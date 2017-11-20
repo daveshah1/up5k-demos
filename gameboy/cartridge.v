@@ -1,7 +1,7 @@
 /*
 Cartridge memory with SPI loader
 */
-module gb_cartridge(
+module gb_cartridge (
   input clk,
   input reset,
   input [15:0] cart_addr,
@@ -83,15 +83,18 @@ begin
 end
 
 module icosoc_flashmem (
-	input clk, resetn,
+	.clk(clk)
+  .resetn(resetn),
+  .valid(flashmem_valid),
+  .ready(flashmem_ready),
+  .addr(flashmem_addr),
+  .rdata(load_data),
 
-	input valid,
-	output reg ready,
-	input [23:0] addr,
-	output reg [31:0] rdata,
 
-	output reg spi_cs,
-	output reg spi_sclk,
-	output reg spi_mosi,
-	input spi_miso
+	.spi_cs(spi_csn),
+	.spi_sclk(spi_sck),
+	.spi_mosi(spi_mosi),
+	.spi_miso(spi_miso)
 );
+
+endmodule

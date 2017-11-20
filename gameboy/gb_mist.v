@@ -1,9 +1,10 @@
 //
 // gb_mist.v
 //
-// Gameboy for the MIST board https://github.com/mist-devel
+// Gameboy for the iCE40 UltraPlus
 // 
 // Copyright (c) 2015 Till Harbaum <till@harbaum.org> 
+// Copyright (c) 2017 David Shah <dave@ds0.me> 
 // 
 // This source file is free software: you can redistribute it and/or modify 
 // it under the terms of the GNU General Public License as published 
@@ -21,6 +22,11 @@
 
 module gb_mist (
 	
+	//flash interface
+	output spi_csn,
+	output spi_sck,
+	output spi_mosi,
+	input spi_miso,
 
   input [7:0] joystick;
 	// video
@@ -30,9 +36,6 @@ module gb_mist (
 );
 
 assign LED = 1'b0;   // light led
-
-
-
 
 wire reset = (reset_cnt != 0);
 reg [9:0] reset_cnt;
@@ -44,11 +47,23 @@ always @(posedge clk24) begin
 			reset_cnt <= reset_cnt - 10'd1;
 end
 
-wire [7:0] cart_di;    // data from cpu to cart
-wire [7:0] cart_do = cart_addr[0]?sdram_do[7:0]:sdram_do[15:8];
-wire [15:0] cart_addr;
-wire cart_rd;
-wire cart_wr;
+wire cart_ready;
+wire gb_reset = (!cart_ready) || reset;
+
+wire card_rd, cart_wr;
+wire [7:0] cart_di;
+
+gb_cartridge cart_i (
+  .clk(clk4),
+  .reset(reset),
+  .cart_addr(cart_addr),
+  .cart_dout(cart_do),
+  .ready(cart_ready),
+  
+  .spi_sck(spi_sck),
+  .spi_csn(spi_csn),
+  .spi_mosi(spi_mosi),
+  .spi_miso(spi_miso)); 
 
 wire lcd_clkena;
 wire [1:0] lcd_data;
@@ -60,7 +75,7 @@ wire [15:0] audio_right;
 
 // the gameboy itself
 gb gb (
-	.reset	    ( reset        ),
+	.reset	    ( gb_reset        ),
 	.clk         ( clk4         ),   // the whole gameboy runs on 4mhnz
 
 	.fast_boot   ( status[2]    ),
@@ -90,7 +105,7 @@ gb gb (
 wire [1:0] video_d;
 wire video_hs, video_vs;
 
-lcd lcd (
+lcd lcd_i (
 	 .pclk   ( clk8       ),
 	 .clk    ( clk4       ),
 
@@ -125,10 +140,20 @@ always @(posedge clk32)
 	clk16 <= !clk16;
 				
 
+wire clk24;
+
 pll pll_i (
 	 .clock_in(clk24),   
 	 .clock_out(clk32),  
 	 .locked(pll_locked)
+);
+
+SB_HFOSC #(
+	.CLKHF_DIV("0b01")
+) iosc (
+	.CLKHFEN(1'b1),
+	.CLKHFPU(1'b1),
+	.CLKHF(clk24)
 );
 
 endmodule
