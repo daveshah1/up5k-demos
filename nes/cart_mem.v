@@ -53,7 +53,7 @@ wire [31:0] spram_write_data = load_done ? {write_data, write_data, write_data, 
 
 wire [31:0] spram_read_data;
 
-assign read_data = spram_read_data;
+assign read_data = decoded_address[1] ? (decoded_address[0] ? spram_read_data[31:24] : spram_read_data[23:16]) : (decoded_address[0] ? spram_read_data[15:8] : spram_read_data[7:0]);
 
 `ifdef no_spram_prim
   reg [31:0] spram_mem[0:32767];

@@ -2,6 +2,7 @@ module sigma_delta_dac(
    output    reg             DACout,   //Average Output feeding analog lowpass
    input          [MSBI:0]    DACin,   //DAC input (excess 2**MSBI)
    input                  CLK,
+   input                  CEN,
    input                   RESET
 );
 
@@ -25,7 +26,7 @@ always @(posedge CLK or posedge RESET)
    if(RESET) begin
       SigmaLatch <= 1'b1 << (MSBI+1);
       DACout <= 1'b0;
-   end else begin
+   end else if(CEN) begin
       SigmaLatch <= SigmaAdder;
       DACout <= SigmaLatch[MSBI+2];
    end

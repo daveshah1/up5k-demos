@@ -62,7 +62,7 @@ module NES_ice40 (
   	.locked(locked_pre)
   );  
   
-  assign LED0 = locked_pre;
+  assign LED0 = memory_addr[0];
   assign LED1 = !load_done;
   
   main_mem mem (
@@ -132,12 +132,13 @@ video video (
 
 wire audio;
 assign AUDIO_O = audio;
-sigma_delta_dac sigma_delta_dac (
+/*sigma_delta_dac sigma_delta_dac (
 	.DACout(audio),
 	.DACin(sample[15:8]),
 	.CLK(clock),
-	.RESET(reset_nes)
-);
+	.RESET(reset_nes),
+  .CEN(run_nes)
+);*/
 
 
 
