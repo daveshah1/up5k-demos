@@ -13,15 +13,12 @@ module video(
 	input overscan,
 	input palette,
 	
-	input sck,
-	input ss,
-	input sdi,
 
 	output       VGA_HS,
 	output       VGA_VS,
-	output [1:0] VGA_R,
-	output [1:0] VGA_G,
-	output [1:0] VGA_B,
+	output [3:0] VGA_R,
+	output [3:0] VGA_G,
+	output [3:0] VGA_B,
 	
 	output osd_visible
 );
@@ -55,15 +52,18 @@ wire vend = (v == (523 >> mode));       // End of picture, 524 lines. (Should re
 wire [14:0] doubler_pixel;
 wire doubler_sync;
 
-Hq2x hq2x(clk, pixel, smoothing,        // enabled 
-            count_v[8],                 // reset_frame
-            (count_h[8:3] == 42),       // reset_line
-            {v[0], h[9] ? 9'd0 : h[8:0] + 9'd1}, // 0-511 for line 1, or 512-1023 for line 2.
-            doubler_sync,               // new frame has just started
-            doubler_pixel);             // pixel is outputted
+scan_double doubler(clk, pixel,
+		            count_v[8],                 // reset_frame
+		            (count_h[8:3] == 42),       // reset_line
+		            {v[0], h[9] ? 9'd0 : h[8:0] + 9'd1}, // 0-511 for line 1, or 512-1023 for line 2.
+		            doubler_pixel);             // pixel is outputted
+
 
 reg [8:0] old_count_v;
 wire sync_frame = (old_count_v == 9'd511) && (count_v == 9'd0);
+
+assign doubler_sync = sync_frame;
+
 always @(posedge clkv) begin
   h <= (hend || (mode ? sync_frame : doubler_sync)) ? 10'd0 : h + 10'd1;
   if(mode ? sync_frame : doubler_sync) v <= 0;
@@ -92,8 +92,8 @@ wire         sync_v = ((v >= (mode ? 240 + 5  : 480 + 10))  && (v < (mode ? 240 
 
 assign VGA_HS = !sync_h;
 assign VGA_VS = !sync_v;
-assign VGA_R = vga_r[4:3];
-assign VGA_G = vga_g[4:3];
-assign VGA_B = vga_b[4:3];
+assign VGA_R = vga_r[4:1];
+assign VGA_G = vga_g[4:1];
+assign VGA_B = vga_b[4:1];
 
 endmodule
