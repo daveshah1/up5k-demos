@@ -97,7 +97,7 @@ module NES_ice40 (
   wire [1:0] dbgctr;
   
   NES nes(clock, reset_nes, run_nes,
-          {3'b111, 3'b101, 8'd0},
+          {1'b1, 3'b111, 3'b101, 8'd0},
           sample, color,
           joy_strobe, joy_clock, {3'b0,!joy_data},
           5'b11111,  // enable all channels
