@@ -99,7 +99,7 @@ module NES_ice40 (
   NES nes(clock, reset_nes, run_nes,
           {3'b111, 3'b101, 8'd0},
           sample, color,
-          joy_strobe, joy_clock, {3'b0,joy_data},
+          joy_strobe, joy_clock, {3'b0,!joy_data},
           5'b11111,  // enable all channels
           memory_addr,
           memory_read_cpu, memory_din_cpu,
@@ -132,13 +132,13 @@ video video (
 
 wire audio;
 assign AUDIO_O = audio;
-/*sigma_delta_dac sigma_delta_dac (
+sigma_delta_dac sigma_delta_dac (
 	.DACout(audio),
 	.DACin(sample[15:8]),
 	.CLK(clock),
 	.RESET(reset_nes),
   .CEN(run_nes)
-);*/
+);
 
 
 
