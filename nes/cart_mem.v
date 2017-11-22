@@ -85,7 +85,7 @@ assign read_data = decoded_address[1] ? (decoded_address[0] ? spram_read_data[31
 wire flashmem_valid = !load_done;
 wire flashmem_ready;
 assign load_wren =  flashmem_ready;
-wire [23:0] flashmem_addr = 24'h100000 | {load_addr, 2'b00};
+wire [23:0] flashmem_addr = 24'h100000 | (index << 18) | {load_addr, 2'b00};
 
 always @(posedge clock) 
 begin
