@@ -76,10 +76,16 @@ elif chr_size <= 512*1024:
 else:
     chr_mask = 7
 
+if chr_size == 0:
+    has_chr_ram = 1
+else:
+    has_chr_ram = 0
+
 out_flags |= (prg_mask << 8)
 out_flags |= (chr_mask << 11)
 out_flags |= (mirroring << 14)
-out_flags |= (fourscreen << 15)
+out_flags |= (has_chr_ram << 15)
+out_flags |= (fourscreen << 16)
 
 with open(sys.argv[2], 'wb') as f:
     f.write(prg_dat)

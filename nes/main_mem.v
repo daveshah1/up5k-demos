@@ -15,7 +15,7 @@ module main_mem(
   input [21:0] mem_addr,
   input mem_rd_cpu, mem_rd_ppu,
   input mem_wr,
-  output [7:0] mem_q_cpu, mem_q_ppu,
+  output reg [7:0] mem_q_cpu, mem_q_ppu,
   input [7:0] mem_d,
   
   //Flash load interface

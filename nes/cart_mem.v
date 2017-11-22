@@ -39,7 +39,10 @@ initial load_done = 1'b0;
 
 wire cart_ready = load_done;
 
-wire spram_en = prg_sel | chr_sel;
+wire is_unrom = (flags_out[7:0] == 2);
+
+wire spram_en = prg_sel | (!is_unrom && chr_sel);
+wire sram_en = ram_sel | (is_unrom && chr_sel);
 
 wire [16:0] decoded_address;
 assign decoded_address = chr_sel ? {1'b1, address[15:0]} : address[16:0];
@@ -59,7 +62,7 @@ wire [31:0] spram_read_data;
 
 wire [7:0] csram_read_data;
 
-assign read_data = ram_sel ? csram_read_data : 
+assign read_data = sram_en ? csram_read_data : 
     (decoded_address[1] ? (decoded_address[0] ? spram_read_data[31:24] : spram_read_data[23:16]) : (decoded_address[0] ? spram_read_data[15:8] : spram_read_data[7:0]));
 
  
@@ -70,7 +73,7 @@ generic_ram #(
   .clock(clock),
   .reset(reset),
   .address(decoded_address[12:0]), 
-  .wren(wren&ram_sel), 
+  .wren(wren&sram_en), 
   .write_data(write_data), 
   .read_data(csram_read_data)
 );
@@ -113,27 +116,47 @@ wire flashmem_ready;
 assign load_wren =  flashmem_ready && (load_addr != 16'h8000);
 wire [23:0] flashmem_addr = 24'h100000 | (index << 18) | {load_addr, 2'b00};
 
+reg load_done_pre;
+
+reg [7:0] wait_ctr;
+
 always @(posedge clock) 
 begin
   if (reset == 1'b1) begin
+    load_done_pre <= 1'b0;
     load_done <= 1'b0;
-    load_addr <= 14'h0000;
+    load_addr <= 16'h0000;
+    flags_out <= 32'h00000000;
+    wait_ctr <= 8'h00;
   end else begin
     if (reload == 1'b1) begin
+      load_done_pre <= 1'b0;
       load_done <= 1'b0;
-      load_addr <= 14'h0000;  
+      load_addr <= 16'h0000;
+      flags_out <= 32'h00000000;
+      wait_ctr <= 8'h00;
     end else begin
-      if (flashmem_ready == 1'b1) begin
-        if (load_addr == 16'h8000) begin
+      if(!load_done_pre) begin
+        if (flashmem_ready == 1'b1) begin
+          if (load_addr == 16'h8000) begin
+            load_done_pre <= 1'b1;
+            flags_out <= load_write_data; //last word is mapper flags
+          end else begin
+            load_addr <= load_addr + 1'b1;
+          end;
+        end
+      end else begin
+        if (wait_ctr < 8'hFF)
+          wait_ctr <= wait_ctr + 1;
+        else
           load_done <= 1'b1;
-          flags_out <= load_write_data; //last word is mapper flags
-        end else begin
-          load_addr <= load_addr + 1'b1;
-        end;
       end
+      
     end
   end
 end
+
+
 
 icosoc_flashmem flash_i (
 	.clk(clock),
