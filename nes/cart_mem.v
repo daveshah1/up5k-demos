@@ -13,7 +13,7 @@ module cart_mem(
   input [3:0] index,
   
   output cart_ready,
-  
+  output reg [31:0] flags_out,
   //address into a given section - 0 is the start of CHR and PRG,
   //region is selected using the select lines for maximum flexibility
   //in partitioning
@@ -42,10 +42,10 @@ wire cart_ready = load_done;
 wire spram_en = prg_sel | chr_sel;
 
 wire [16:0] decoded_address;
-assign decoded_address = chr_sel ? {1'b1, address[15:0]} : {1'b0, address[15:0]};
+assign decoded_address = chr_sel ? {1'b1, address[15:0]} : address[16:0];
 
-reg [14:0] load_addr;
-wire [14:0] spram_address = load_done ? decoded_address[16:2] : load_addr;
+reg [15:0] load_addr;
+wire [14:0] spram_address = load_done ? decoded_address[16:2] : load_addr[14:0];
 
 wire load_wren;
 wire spram_wren = load_done ? (spram_en && wren) : load_wren;
@@ -57,7 +57,23 @@ wire [31:0] spram_write_data = load_done ? {write_data, write_data, write_data, 
 
 wire [31:0] spram_read_data;
 
-assign read_data = decoded_address[1] ? (decoded_address[0] ? spram_read_data[31:24] : spram_read_data[23:16]) : (decoded_address[0] ? spram_read_data[15:8] : spram_read_data[7:0]);
+wire [7:0] csram_read_data;
+
+assign read_data = ram_sel ? csram_read_data : 
+    (decoded_address[1] ? (decoded_address[0] ? spram_read_data[31:24] : spram_read_data[23:16]) : (decoded_address[0] ? spram_read_data[15:8] : spram_read_data[7:0]));
+
+ 
+generic_ram #(
+  .WIDTH(8),
+  .WORDS(8192)
+) sram_i (
+  .clock(clock),
+  .reset(reset),
+  .address(decoded_address[12:0]), 
+  .wren(wren&ram_sel), 
+  .write_data(write_data), 
+  .read_data(csram_read_data)
+);
 
 `ifdef no_spram_prim
   reg [31:0] spram_mem[0:32767];
@@ -72,11 +88,21 @@ assign read_data = decoded_address[1] ? (decoded_address[0] ? spram_read_data[31
   end;
   assign spram_read_data <= spram_dout_pre;
 `else
+
+  reg [14:0] address_reg;
+  reg [3:0] wen_reg;
+  reg [31:0] data_reg;
+  always @(posedge clock)
+  begin
+    address_reg <= spram_address;
+    wen_reg <= spram_maskwren;
+    data_reg <= spram_write_data;
+  end
   up_spram spram_i (
     .clk(clock),
-    .wen(spram_maskwren),
-    .addr(spram_address),
-    .wdata(spram_write_data),
+    .wen(wen_reg),
+    .addr(address_reg),
+    .wdata(data_reg),
     .rdata(spram_read_data)
   );
 `endif
@@ -84,7 +110,7 @@ assign read_data = decoded_address[1] ? (decoded_address[0] ? spram_read_data[31
 
 wire flashmem_valid = !load_done;
 wire flashmem_ready;
-assign load_wren =  flashmem_ready;
+assign load_wren =  flashmem_ready && (load_addr != 16'h8000);
 wire [23:0] flashmem_addr = 24'h100000 | (index << 18) | {load_addr, 2'b00};
 
 always @(posedge clock) 
@@ -98,8 +124,9 @@ begin
       load_addr <= 14'h0000;  
     end else begin
       if (flashmem_ready == 1'b1) begin
-        if (load_addr == 15'h7FFF) begin
+        if (load_addr == 16'h8000) begin
           load_done <= 1'b1;
+          flags_out <= load_write_data; //last word is mapper flags
         end else begin
           load_addr <= load_addr + 1'b1;
         end;

@@ -33,7 +33,7 @@ up5kprog: up5knes.bin
 	$(ICEPROG) up5knes.bin
 	
 
-up5kprog_game: rom/game0.bin rom/game1.bin rom/game2.bin
+up5kprog_game: rom/game0.bin rom/game1.bin rom/game2.bin rom/nes2bin.py
 	$(ICEPROG) -o 1024k rom/game0.bin
 	$(ICEPROG) -o 1280k rom/game1.bin
 	$(ICEPROG) -o 1536k rom/game2.bin

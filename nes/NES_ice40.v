@@ -70,6 +70,8 @@ SB_IO #(
   wire [7:0] memory_din_cpu, memory_din_ppu;
   wire [7:0] memory_dout;
   
+  wire [31:0] mapper_flags;
+  
   pll pll_i (
   	.clock_in(clock_16),
   	.clock_out(clock),
@@ -105,7 +107,7 @@ SB_IO #(
     .reload(reload),
     .index({2'b00, last_pressed}),
     .load_done(load_done),
-    
+    .flags_out(mapper_flags),
     //NES interface
     .mem_addr(memory_addr),
     .mem_rd_cpu(memory_read_cpu),
@@ -140,7 +142,7 @@ SB_IO #(
   wire [1:0] dbgctr;
   
   NES nes(clock, reset_nes, run_nes_g,
-          {2'b11, 3'b000, 3'b001, 8'd0},
+          mapper_flags,
           sample, color,
           joy_strobe, joy_clock, {3'b0,!joy_data},
           5'b11111,  // enable all channels

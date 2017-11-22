@@ -10,7 +10,7 @@ module main_mem(
   input [3:0] index,
   
   output load_done,
-  
+  output [31:0] flags_out,
   //NES interface
   input [21:0] mem_addr,
   input mem_rd_cpu, mem_rd_ppu,
@@ -70,6 +70,7 @@ cart_mem cart_i (
   .reload(reload),
   .index(index),
   .cart_ready(load_done),
+  .flags_out(flags_out),
   .address(segment_addr),
   .prg_sel(prgrom_en),
   .chr_sel(chrrom_en),
