@@ -65,7 +65,7 @@ module MMC1(input clk, input ce, input reset,
   wire [2:0] prg_size = flags[10:8];
    
   // Update shift register
-  always @(posedge clk) if (reset) begin
+  always @(posedge clk or posedge reset) if (reset) begin
 		shift <= 5'b10000;
 		control <= 5'b0_11_00;
 		chr_bank_0 <= 0;

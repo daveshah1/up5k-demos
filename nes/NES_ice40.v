@@ -125,13 +125,6 @@ SB_IO #(
   wire reset_nes = !load_done || sys_reset;
   reg [1:0] nes_ce;
   wire run_nes = (nes_ce == 3);	// keep running even when reset, so that the reset can actually do its job!
-  
-  wire run_nes_g;
-  SB_GB ce_buf (
-    .USER_SIGNAL_TO_GLOBAL_BUFFER(run_nes),
-    .GLOBAL_BUFFER_OUTPUT(run_nes_g)
-  );
-  
   // NES is clocked at every 4th cycle.
   always @(posedge clock)
     nes_ce <= nes_ce + 1;
@@ -139,8 +132,8 @@ SB_IO #(
   wire [31:0] dbgadr;
   wire [1:0] dbgctr;
   
-  NES nes(clock, reset_nes, run_nes_g,
-          {2'b11, 3'b000, 3'b001, 8'd0},
+  NES nes(clock, reset_nes, run_nes,
+          {1'b1, 3'b111, 3'b101, 8'd0},
           sample, color,
           joy_strobe, joy_clock, {3'b0,!joy_data},
           5'b11111,  // enable all channels
@@ -175,13 +168,13 @@ video video (
 
 wire audio;
 assign AUDIO_O = audio;
-/*sigma_delta_dac sigma_delta_dac (
+sigma_delta_dac sigma_delta_dac (
 	.DACout(audio),
 	.DACin(sample[15:8]),
 	.CLK(clock),
 	.RESET(reset_nes),
   .CEN(run_nes)
-);*/
+);
 
 
 

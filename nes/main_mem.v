@@ -51,17 +51,12 @@ wire [20:0] segment_addr = prgrom_en ? mem_addr[20:0] : (chrrom_en ? {1'b0, mem_
 wire [7:0] cpuram_read_data, vram_read_data, cart_read_data;
 wire rden = mem_rd_cpu | mem_rd_ppu;
 
-always@(posedge clock or posedge reset)
+always@(posedge clock)
 begin
-  if (reset == 1'b1) begin
-    mem_q_cpu <= 0;
-    mem_q_ppu <= 0;
-  end else begin
-    if (mem_rd_cpu)
-      mem_q_cpu <= cpuram_en ? cpuram_read_data : (vram_en ? vram_read_data : cart_read_data);
-    if (mem_rd_ppu)
-      mem_q_ppu <= cpuram_en ? cpuram_read_data : (vram_en ? vram_read_data : cart_read_data);
-  end;
+  if (mem_rd_cpu)
+    mem_q_cpu <= cpuram_en ? cpuram_read_data : (vram_en ? vram_read_data : cart_read_data);
+  if (mem_rd_ppu)
+    mem_q_ppu <= cpuram_en ? cpuram_read_data : (vram_en ? vram_read_data : cart_read_data);
 end
 
 cart_mem cart_i (

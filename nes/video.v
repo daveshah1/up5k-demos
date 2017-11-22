@@ -33,14 +33,14 @@ wire [5:0] R_out, G_out, B_out;
 
 // NTSC UnsaturatedV6 palette
 //see: http://www.firebrandx.com/nespalette.html
-/*reg [15:0] pal_unsat_lut[0:63];
-initial $readmemh("nes_palette_unsaturatedv6.txt", pal_unsat_lut);*/
+reg [15:0] pal_unsat_lut[0:63];
+initial $readmemh("nes_palette_unsaturatedv6.txt", pal_unsat_lut);
 
 // FCEUX palette
 reg [15:0] pal_fcelut[0:63];
 initial $readmemh("nes_palette_fceux.txt", pal_fcelut);
 
-wire [14:0] pixel = pal_fcelut[color][14:0];
+wire [14:0] pixel = palette ?  pal_unsat_lut[color][14:0] : pal_fcelut[color][14:0];
  
 // Horizontal and vertical counters
 reg [9:0] h, v;

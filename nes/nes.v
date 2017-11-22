@@ -62,7 +62,7 @@ module DmaController(input clk, input ce, input reset,
   reg [7:0] sprite_dma_lastval;
   reg [15:0] sprite_dma_addr;     // sprite dma source addr
   wire [8:0] new_sprite_dma_addr = sprite_dma_addr[7:0] + 8'h01;
-  always @(posedge clk) if (reset) begin
+  always @(posedge clk or posedge reset) if (reset) begin
     dmc_state <= 0;
     spr_state <= 0;    
     sprite_dma_lastval <= 0;
@@ -108,7 +108,7 @@ module MemoryMultiplex(input clk, input ce, input reset,
   assign memory_read_ppu = chr_read;
   assign memory_read_cpu = !(chr_read || chr_write) && (prg_read || saved_prg_read);
   assign memory_dout = chr_write ? chr_din : prg_din;
-  always @(posedge clk) if (reset) begin
+  always @(posedge clk or posedge reset) if (reset) begin
 		saved_prg_read <= 0;
 		saved_prg_write <= 0;
   end else if (ce) begin
@@ -156,7 +156,7 @@ module NES(input clk, input reset, input ce,
   // CPU is clocked at cycle #2. PPU is clocked at cycle #0, #1, #2.
   // CPU does its memory I/O on cycle #0. It will be available in time for cycle #2.
   reg [1:0] cpu_cycle_counter;
-  always @(posedge clk) begin
+  always @(posedge clk or posedge reset) begin
     if (reset)
       cpu_cycle_counter <= 0;
     else if (ce)
@@ -167,7 +167,7 @@ module NES(input clk, input reset, input ce,
   // the CPU will use it even though it shouldn't be used until the next CPU cycle.
   wire nmi;
   reg nmi_active;
-  always @(posedge clk) begin
+  always @(posedge clk or posedge reset) begin
     if (reset)
       nmi_active <= 0;
     else if (ce && cpu_cycle_counter == 0)
@@ -272,7 +272,7 @@ module NES(input clk, input reset, input ce,
                              
   // Mapper IRQ seems to be delayed by one PPU clock.   
   // APU IRQ seems delayed by one APU clock.
-  always @(posedge clk) if (reset) begin
+  always @(posedge clk or posedge reset) if (reset) begin
     mapper_irq_delayed <= 0;
     apu_irq_delayed <= 0;
   end else begin
