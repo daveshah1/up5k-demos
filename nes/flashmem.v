@@ -1,5 +1,5 @@
 module icosoc_flashmem (
-	input clk, resetn,
+	input clk, reset,
 
 	input valid,
 	output reg ready,
@@ -17,7 +17,7 @@ module icosoc_flashmem (
 
 	always @(posedge clk) begin
 		ready <= 0;
-		if (!resetn || !valid || ready) begin
+		if (reset || !valid || ready) begin
 			spi_cs <= 1;
 			spi_sclk <= 1;
 			xfer_cnt <= 0;

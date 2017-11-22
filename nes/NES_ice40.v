@@ -30,12 +30,26 @@ module NES_ice40 (
   output flash_mosi,
   input flash_miso,
   
+  input [2:0] buttons,
+  
 );
 	wire clock;
-  
-  wire [1:0] buttons;
-  wire [1:0] switches;
-   
+
+wire [2:0] sel_btn;
+
+`ifdef no_io_prim
+assign sel_btn = buttons;
+`else
+//Use SB_IO so we can enable pullup
+(* PULLUP_RESISTOR = "10K" *)
+SB_IO #(
+  .PIN_TYPE(6'b000001),
+  .PULLUP(1'b1)
+) btns [2:0]   (
+  .PACKAGE_PIN(buttons),
+  .D_IN_0(sel_btn)
+);
+`endif
 
   wire scandoubler_disable;
 
@@ -65,9 +79,31 @@ module NES_ice40 (
   assign LED0 = memory_addr[0];
   assign LED1 = !load_done;
   
+  wire sys_reset = !clock_locked;
+  reg reload;
+  reg [1:0] last_pressed;
+  reg [2:0] btn_dly;
+  always @ ( posedge clock ) begin
+    //Detect button release and trigger reload
+    btn_dly <= sel_btn;
+    if (sel_btn == 3'b111 && btn_dly != 3'b111)
+      reload <= 1'b1;
+    else
+      reload <= 1'b0;
+    
+    if(!sel_btn[0])
+      last_pressed <= 2'b00;
+    else if(!sel_btn[1])
+      last_pressed <= 2'b01;
+    else if(!sel_btn[2])
+      last_pressed <= 2'b10;
+  end
+  
   main_mem mem (
     .clock(clock),
-    .reset(!clock_locked),
+    .reset(sys_reset),
+    .reload(reload),
+    .index({2'b00, last_pressed}),
     .load_done(load_done),
     
     //NES interface
@@ -86,7 +122,7 @@ module NES_ice40 (
     .flash_miso(flash_miso)
   );
   
-  wire reset_nes = !load_done || !clock_locked;
+  wire reset_nes = !load_done || sys_reset;
   reg [1:0] nes_ce;
   wire run_nes = (nes_ce == 3);	// keep running even when reset, so that the reset can actually do its job!
   // NES is clocked at every 4th cycle.
@@ -118,7 +154,7 @@ video video (
 	.count_h(cycle),
 	.mode(1'b0),
 	.smoothing(1'b1),
-	.scanlines(1'b1),
+	.scanlines(1'b0),
 	.overscan(1'b1),
 	.palette(1'b0),
 	
