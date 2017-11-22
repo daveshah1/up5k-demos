@@ -23,7 +23,7 @@ always @(*)
    SigmaAdder = DeltaAdder + SigmaLatch;
    
 always @(posedge CLK)
-    if(CEN) begin
+    begin
       SigmaLatch <= SigmaAdder;
       DACout <= SigmaLatch[MSBI+2];
    end

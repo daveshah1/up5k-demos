@@ -5,6 +5,10 @@ and cartridge data.
 
 module main_mem(
   input clock, reset,
+  
+  input reload,
+  input [3:0] index,
+  
   output load_done,
   
   //NES interface
@@ -47,17 +51,24 @@ wire [20:0] segment_addr = prgrom_en ? mem_addr[20:0] : (chrrom_en ? {1'b0, mem_
 wire [7:0] cpuram_read_data, vram_read_data, cart_read_data;
 wire rden = mem_rd_cpu | mem_rd_ppu;
 
-always@(posedge clock)
+always@(posedge clock or posedge reset)
 begin
-  if (mem_rd_cpu)
-    mem_q_cpu <= cpuram_en ? cpuram_read_data : (vram_en ? vram_read_data : cart_read_data);
-  if (mem_rd_ppu)
-    mem_q_ppu <= cpuram_en ? cpuram_read_data : (vram_en ? vram_read_data : cart_read_data);
+  if (reset == 1'b1) begin
+    mem_q_cpu <= 0;
+    mem_q_ppu <= 0;
+  end else begin
+    if (mem_rd_cpu)
+      mem_q_cpu <= cpuram_en ? cpuram_read_data : (vram_en ? vram_read_data : cart_read_data);
+    if (mem_rd_ppu)
+      mem_q_ppu <= cpuram_en ? cpuram_read_data : (vram_en ? vram_read_data : cart_read_data);
+  end;
 end
 
 cart_mem cart_i (
   .clock(clock),
   .reset(reset),
+  .reload(reload),
+  .index(index),
   .cart_ready(load_done),
   .address(segment_addr),
   .prg_sel(prgrom_en),
@@ -80,6 +91,7 @@ generic_ram #(
   .WORDS(2048)
 ) cpuram_i (
   .clock(clock),
+  .reset(reset),
   .address(segment_addr[10:0]), 
   .wren(mem_wr&cpuram_en), 
   .write_data(mem_d), 
@@ -91,6 +103,7 @@ generic_ram #(
   .WORDS(2048)
 ) vram_i (
   .clock(clock),
+  .reset(reset),
   .address(segment_addr[10:0]), 
   .wren(mem_wr&vram_en), 
   .write_data(mem_d), 

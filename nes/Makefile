@@ -20,15 +20,23 @@ up5knes.bin: up5knes.asc
 	# $(ICETIME) -d up5k -c 12 -mtr up5knes.rpt up5knes.asc
 	$(ICEPACK) up5knes.asc up5knes.bin
 
-rom/game.bin: rom/game.nes
+rom/game0.bin: rom/game0.nes
+	rom/nes2bin.py $^ $@
+
+rom/game1.bin: rom/game1.nes
 	rom/nes2bin.py $^ $@
 	
-up5kprog: up5knes.bin rom/game.bin
-	$(ICEPROG) up5knes.bin
-	$(ICEPROG) -o 1M rom/game.bin
+rom/game2.bin: rom/game2.nes
+	rom/nes2bin.py $^ $@
 
-up5kprog_game: rom/game.bin
-	$(ICEPROG) -o 1M rom/game.bin
+up5kprog: up5knes.bin 
+	$(ICEPROG) up5knes.bin
+	
+
+up5kprog_game: rom/game0.bin rom/game1.bin rom/game2.bin
+	$(ICEPROG) -o 1024k rom/game0.bin
+	$(ICEPROG) -o 1280k rom/game1.bin
+	$(ICEPROG) -o 1536k rom/game2.bin
 
 
 
