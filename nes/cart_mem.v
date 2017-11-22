@@ -8,10 +8,6 @@ SQI flash, which is more than fast enough
 module cart_mem(
   input clock,
   input reset,
-  
-  input reload,
-  input [3:0] index,
-  
   output cart_ready,
   
   //address into a given section - 0 is the start of CHR and PRG,
@@ -85,32 +81,28 @@ assign read_data = decoded_address[1] ? (decoded_address[0] ? spram_read_data[31
 wire flashmem_valid = !load_done;
 wire flashmem_ready;
 assign load_wren =  flashmem_ready;
+wire flashmem_rstn = !reset;
 wire [23:0] flashmem_addr = 24'h100000 | {load_addr, 2'b00};
 
-always @(posedge clock) 
+always @(posedge reset or posedge clock) 
 begin
   if (reset == 1'b1) begin
     load_done <= 1'b0;
     load_addr <= 14'h0000;
   end else begin
-    if (reload == 1'b1) begin
-      load_done <= 1'b0;
-      load_addr <= 14'h0000;  
-    end else begin
-      if (flashmem_ready == 1'b1) begin
-        if (load_addr == 15'h7FFF) begin
-          load_done <= 1'b1;
-        end else begin
-          load_addr <= load_addr + 1'b1;
-        end;
-      end
+    if (flashmem_ready == 1'b1) begin
+      if (load_addr == 15'h7FFF) begin
+        load_done <= 1'b1;
+      end else begin
+        load_addr <= load_addr + 1'b1;
+      end;
     end
   end
 end
 
 icosoc_flashmem flash_i (
 	.clk(clock),
-  .reset(reset),
+  .resetn(flashmem_rstn),
   .valid(flashmem_valid),
   .ready(flashmem_ready),
   .addr(flashmem_addr),

@@ -5,10 +5,6 @@ and cartridge data.
 
 module main_mem(
   input clock, reset,
-  
-  input reload,
-  input [3:0] index,
-  
   output load_done,
   
   //NES interface
@@ -62,8 +58,6 @@ end
 cart_mem cart_i (
   .clock(clock),
   .reset(reset),
-  .reload(reload),
-  .index(index),
   .cart_ready(load_done),
   .address(segment_addr),
   .prg_sel(prgrom_en),
@@ -86,7 +80,6 @@ generic_ram #(
   .WORDS(2048)
 ) cpuram_i (
   .clock(clock),
-  .reset(reset),
   .address(segment_addr[10:0]), 
   .wren(mem_wr&cpuram_en), 
   .write_data(mem_d), 
@@ -98,7 +91,6 @@ generic_ram #(
   .WORDS(2048)
 ) vram_i (
   .clock(clock),
-  .reset(reset),
   .address(segment_addr[10:0]), 
   .wren(mem_wr&vram_en), 
   .write_data(mem_d), 

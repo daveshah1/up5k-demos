@@ -1,5 +1,5 @@
 ARACHNE = arachne-pnr
-ARACHNE_ARGS = 
+ARACHNE_ARGS = -s 2
 ICEPACK = icepack
 ICETIME = icetime
 ICEPROG = iceprog

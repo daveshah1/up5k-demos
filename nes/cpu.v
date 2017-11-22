@@ -229,7 +229,7 @@ MicroCodeTable micro2(clk, ce, reset, NextIR, NextState, MicroCode);
 NewAlu new_alu(IrFlags[15:5], A,X,Y,SP,DIN,T, P[0], P[6], CO, VO, SO, ZO, AluR, AluIntR);
 
 // Registers
-always @(posedge clk or posedge reset) if (reset) begin
+always @(posedge clk) if (reset) begin
   A <= 0;
   X <= 0;
   Y <= 0;
@@ -253,7 +253,7 @@ wire nmi_remembered = (AddrBus != 3) && !IsResetInterrupt ? nmi : LastNMI;
 wire turn_nmi_off = (AddrBus == 3) && (State[0] == 0);
 // Controls whether IsNmiInterrupt will get set
 wire nmi_active = turn_nmi_on ? 1 : turn_nmi_off ? 0 : IsNMIInterrupt;
-always @(posedge clk or posedge reset) begin
+always @(posedge clk) begin
   if (reset) begin
     IsNMIInterrupt <= 0;
     LastNMI <= 0;
