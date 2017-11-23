@@ -1,3 +1,5 @@
+// SPI flash memory interface, taken from the icosoc project
+
 module icosoc_flashmem (
 	input clk, reset,
 

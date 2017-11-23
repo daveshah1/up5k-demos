@@ -30,7 +30,10 @@ if prg_size > prg_alloc:
         prg_dat.append(prg_dat[i % prg_size])
 else:
     for i in range(chr_size, chr_alloc):
-        chr_dat.append(chr_dat[i % chr_size])
+        if chr_size == 0:
+            chr_dat.append(0)
+        else:
+            chr_dat.append(chr_dat[i % chr_size])
 
 out_flags = 0x0
 mapper = (header[6] >> 4) & 0x0F
@@ -90,4 +93,6 @@ out_flags |= (fourscreen << 16)
 with open(sys.argv[2], 'wb') as f:
     f.write(prg_dat)
     f.write(chr_dat)
+    # Append mapper, size and other flags to end of data
     f.write(bytes([(out_flags) & 0xFF, (out_flags >> 8) & 0xFF, (out_flags >> 16) & 0xFF, (out_flags >> 24) & 0xFF]))
+    f.write(bytearray(256*1024 - (prg_alloc + chr_alloc + 4))) # pad to 256kB total

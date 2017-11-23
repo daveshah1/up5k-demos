@@ -38,11 +38,11 @@ reg load_done;
 initial load_done = 1'b0;
 
 wire cart_ready = load_done;
-
-wire is_unrom = (flags_out[7:0] == 2);
-
-wire spram_en = prg_sel | (!is_unrom && chr_sel);
-wire sram_en = ram_sel | (is_unrom && chr_sel);
+// Does the image use CHR RAM instead of ROM? (i.e. UNROM or some MMC1)
+wire is_chram = flags_out[15];
+// Work out whether we're in the SPRAM, used for the main ROM, or the extra 8k SRAM
+wire spram_en = prg_sel | (!is_chram && chr_sel);
+wire sram_en = ram_sel | (is_chram && chr_sel);
 
 wire [16:0] decoded_address;
 assign decoded_address = chr_sel ? {1'b1, address[15:0]} : address[16:0];
@@ -61,11 +61,11 @@ wire [31:0] spram_write_data = load_done ? {write_data, write_data, write_data, 
 wire [31:0] spram_read_data;
 
 wire [7:0] csram_read_data;
-
+// Demux the 32-bit memory
 assign read_data = sram_en ? csram_read_data : 
     (decoded_address[1] ? (decoded_address[0] ? spram_read_data[31:24] : spram_read_data[23:16]) : (decoded_address[0] ? spram_read_data[15:8] : spram_read_data[7:0]));
 
- 
+ // The SRAM, used either for PROG_SRAM or CHR_SRAM
 generic_ram #(
   .WIDTH(8),
   .WORDS(8192)
@@ -77,7 +77,8 @@ generic_ram #(
   .write_data(write_data), 
   .read_data(csram_read_data)
 );
-
+// The SPRAM (with a generic option), which stores
+// the ROM
 `ifdef no_spram_prim
   reg [31:0] spram_mem[0:32767];
   reg [31:0] spram_dout_pre;
@@ -114,12 +115,12 @@ generic_ram #(
 wire flashmem_valid = !load_done;
 wire flashmem_ready;
 assign load_wren =  flashmem_ready && (load_addr != 16'h8000);
-wire [23:0] flashmem_addr = 24'h100000 | (index << 18) | {load_addr, 2'b00};
+wire [23:0] flashmem_addr = (24'h100000 + (index << 18)) | {load_addr, 2'b00};
 
 reg load_done_pre;
 
 reg [7:0] wait_ctr;
-
+// Flash memory load interface
 always @(posedge clock) 
 begin
   if (reset == 1'b1) begin

@@ -30,12 +30,12 @@ module NES_ice40 (
   output flash_mosi,
   input flash_miso,
   
-  input [2:0] buttons,
+  input [4:0] buttons,
   
 );
 	wire clock;
 
-wire [2:0] sel_btn;
+wire [4:0] sel_btn;
 
 `ifdef no_io_prim
 assign sel_btn = buttons;
@@ -45,7 +45,7 @@ assign sel_btn = buttons;
 SB_IO #(
   .PIN_TYPE(6'b000001),
   .PULLUP(1'b1)
-) btns [2:0]   (
+) btns [4:0]   (
   .PACKAGE_PIN(buttons),
   .D_IN_0(sel_btn)
 );
@@ -83,29 +83,31 @@ SB_IO #(
   
   wire sys_reset = !clock_locked;
   reg reload;
-  reg [1:0] last_pressed;
-  reg [2:0] btn_dly;
+  reg [2:0] last_pressed;
+  reg [3:0] btn_dly;
   always @ ( posedge clock ) begin
     //Detect button release and trigger reload
-    btn_dly <= sel_btn;
-    if (sel_btn == 3'b111 && btn_dly != 3'b111)
+    btn_dly <= sel_btn[3:0];
+    if (sel_btn[3:0] == 4'b1111 && btn_dly != 4'b1111)
       reload <= 1'b1;
     else
       reload <= 1'b0;
-    
+    // Button 4 is a "shift"
     if(!sel_btn[0])
-      last_pressed <= 2'b00;
+      last_pressed <= {!sel_btn[4], 2'b00};
     else if(!sel_btn[1])
-      last_pressed <= 2'b01;
+      last_pressed <= {!sel_btn[4], 2'b01};
     else if(!sel_btn[2])
-      last_pressed <= 2'b10;
+      last_pressed <= {!sel_btn[4], 2'b10};
+    else if(!sel_btn[3])
+      last_pressed <= {!sel_btn[4], 2'b11};
   end
   
   main_mem mem (
     .clock(clock),
     .reset(sys_reset),
     .reload(reload),
-    .index({2'b00, last_pressed}),
+    .index({1'b0, last_pressed}),
     .load_done(load_done),
     .flags_out(mapper_flags),
     //NES interface
