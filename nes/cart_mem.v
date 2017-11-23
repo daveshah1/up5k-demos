@@ -115,8 +115,8 @@ generic_ram #(
 wire flashmem_valid = !load_done;
 wire flashmem_ready;
 assign load_wren =  flashmem_ready && (load_addr != 16'h8000);
-wire [23:0] flashmem_addr = (24'h100000 + (index << 18)) | {load_addr, 2'b00};
-
+wire [23:0] flashmem_addr = (24'h100000 + (index_lat << 18)) | {load_addr, 2'b00};
+reg [3:0] index_lat;
 reg load_done_pre;
 
 reg [7:0] wait_ctr;
@@ -129,6 +129,7 @@ begin
     load_addr <= 16'h0000;
     flags_out <= 32'h00000000;
     wait_ctr <= 8'h00;
+    index_lat <= 4'h0;
   end else begin
     if (reload == 1'b1) begin
       load_done_pre <= 1'b0;
@@ -136,6 +137,7 @@ begin
       load_addr <= 16'h0000;
       flags_out <= 32'h00000000;
       wait_ctr <= 8'h00;
+      index_lat <= index;
     end else begin
       if(!load_done_pre) begin
         if (flashmem_ready == 1'b1) begin

@@ -165,7 +165,7 @@ video video (
 	.count_h(cycle),
 	.mode(1'b0),
 	.smoothing(1'b1),
-	.scanlines(1'b0),
+	.scanlines(1'b1),
 	.overscan(1'b1),
 	.palette(1'b0),
 	
